@@ -1,0 +1,10 @@
+duyệt===loại
+trạng thái liên hệ===== trạng thái xét tuyển
+
+
+nhiều kiểu ứng viên nhưng lại through qua ds đã liên hệ đc
+phải có chỗ để cập nhật trạng thái xét tuyển trước khi vào màn gửi mail
+
+
+
+màn gửi mail=====>>> màn confirm gửi mail&& add thông tin schedule pvan

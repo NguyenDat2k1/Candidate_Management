@@ -1,0 +1,9 @@
+1.từ màn hình lọc ứng viên ->duyệt->load dữ liệu table usercv lên màn hình liên hệ(set mặc định liên hệ được và trạng thái)
+2.từ màn hình liên hệ->update(từng cái hoặc hàng loạt)->lưu dữ liệu vào table usecontact
+3 màn hình gửi mail->load dữ liệu usercontact có liên hệ = 1 lên 
+4 khi bấm sendall mail =>up dữ liệu từ màn gửi mail về table InterviewInfor
+5.màn add thông tin pv (load dữ liệu từ table InterviewInfor lên )
+======
+==
+==
+màn lịch phỏng vấn tiêu đề đặt 2 biến @ @ trong 1 value button

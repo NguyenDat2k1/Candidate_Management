@@ -1,0 +1,493 @@
+﻿@page "/SendResult"
+@using Interview.Models
+@using Interview.Data
+@inject SendResultController SendResultService
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.AspNetCore.Components;
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@inject ILogger<Import> Logger
+@inject IWebHostEnvironment Environment
+@using System.Diagnostics
+@using System.Net.Http
+@inject IHttpClientFactory httpClient
+@using System.Net.Http.Json;
+@using System.Web;
+@using System.Timers;
+@using System.Globalization;
+
+<table>
+    @* <tr>
+    <td colspan="5" align="left">
+    <label style="height: 30px; width:300px; background-color:#336699 ; color:#FFFFFF ;border: solid 1px #659EC7;"> Tìm Ứng Viên</label>
+
+    </td>
+    </tr>*@
+    <tr style="height: 30px; background-color:#336699 ; color:#FFFFFF ;border: solid 1px #659EC7;">
+        <td colspan="5" align="left">
+            Tìm Ứng Viên
+        </td>
+    </tr>
+    <tr>
+
+
+
+        <td>
+            <input class="input-group-text" placeholder="Nhập từ khoá..." type="text" @bind-value="@search" />
+        </td>
+        <td>
+            @* <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Searching />*@
+        </td>
+
+
+
+        <td>
+            <select name="Filter" @bind="@type" style="height:37px" class="sele">
+                <option value="">Vị trí:</option>
+                @foreach (var tyDetails in typeDetails)
+                {
+                    <option value="@tyDetails.Name">@tyDetails.Name</option>
+                }
+            </select>
+            @* <input type="button" class="btn btn-primary" value="  Lọc  " @onclick=@Filtering />*@
+        </td>
+
+        <td>
+
+            <select name="Order" @bind="@Order" style="height:37px" class="sele">
+                <option value="">Sắp xếp</option>
+                <option value="0">Mới nhất</option>
+                <option value="1">Cũ nhất</option>
+
+            </select>
+            <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Looking />
+        </td>
+
+
+    </tr>
+    @*  <tr>
+
+
+    <td>
+
+    <select name="Filter" @bind="@type" class="sele">
+    <option value="">Vị trí:</option>
+    @foreach (var tyDetails in typeDetails)
+    {
+    <option value="@tyDetails.Name">@tyDetails.Name</option>
+    }
+    </select>
+
+
+    <input type="button" class="btn btn-primary" value="Lọc" @onclick=@Filtering />
+    </td>
+
+    <td>
+    <select name="Order" @bind="@Order" class="sele">
+    <option value="">Sắp xếp</option>
+    <option value="0">Mới nhất</option>
+    <option value="1">Cũ nhất</option>
+
+    </select>
+    <input type="button" class="btn btn-primary " value="Sắp xếp" @onclick=@Ordering />
+
+
+    </td>
+
+
+    </tr>*@
+</table>
+<div style="@(addPV_Flg ? "" : "opacity: 0.1; transition:0.5s" );@(previewMailFlg ? "" : "opacity: 0.1; transition:0.5s" )">
+    @if (userDetails == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+    @*//main screen*@
+    else if (mainFlg && lookFlg == false)
+    {
+        if (userDetails != null)
+        {
+
+        <table class="table">
+            <thead >
+                <tr>
+
+                    <th class="tbl">ID</th>
+                    <th class="tbl">Chức Danh</th>
+                    <th class="tbl">Vị trí</th>
+                    <th class="tbl">Họ tên</th>
+                    <th class="tbl">Số Điện thoại</th>
+                    <th class="tbl">Thời Gian phỏng vấn</th>
+                    <th class="tbl">Địa đỉểm phỏng vấn</th>
+
+                    <th class="tbl">Xem chi tiết</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var uDetails in userDetails)
+                {
+                    <tr class="tbl1">
+
+                        <td class="tbl">
+                            @uDetails.userID
+                        </td>
+                        <td class="tbl">@uDetails.Role</td>
+                        <td class="tbl">@uDetails.Position</td>
+                        <td class="tbl">@uDetails.userName</td>
+                        <td class="tbl">@uDetails.Phone</td>
+                        <td class="tbl"> @ConvertTimeFormat(@uDetails.TimeMeeting)  </td>
+                        <td class="tbl">@uDetails.Place</td>
+
+
+                        <td>
+                                <input type="button" class="btn btn-primary tybut act1_Btn" value="Gửi kết quả" @onclick="() => Judge(uDetails)" />
+
+
+                        </td>
+
+
+
+
+                    </tr>
+
+                }
+            </tbody>
+        </table>
+    }
+}
+    @*//Filters screen*@
+    else if (looking.Count != 0)
+    {
+        if (lookFlg)
+        {
+            <table class="table">
+                <thead >
+                    <tr>
+
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+
+                        <th class="tbl">Xem chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in looking)
+                    {
+                        <tr class="tbl1">
+
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> @ConvertTimeFormat(@uDetails.TimeMeeting)  </td>
+                            <td class="tbl">@uDetails.Place</td>
+
+
+                            <td>
+                                <input type="button" class="btn btn-primary tybut act1_Btn" value="Gửi kết quả" @onclick="() => Judge(uDetails)" />
+
+
+                            </td>
+
+
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+
+    }
+    @*//Searchs screen*@
+    else if (userSearchs != null && userSearchs.Count != 0)
+    {
+        if (searchFlg)
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+
+                        <th class="tbl">Xem chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userSearchs)
+                    {
+                        <tr class="tbl1">
+
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> @ConvertTimeFormat(@uDetails.TimeMeeting)  </td>
+                            <td class="tbl">@uDetails.Place</td>
+
+
+                            <td>
+                                <input type="button" class="btn btn-primary tybut" value="Gửi kết quả" @onclick="() => Judge(uDetails)" />
+
+
+                            </td>
+
+
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+    }
+    @*//Orders screen*@
+    else if (userOrders != null && userOrders.Count != 0)
+    {
+        if (orderFlg)
+        {
+            <table class="table">
+                <thead >
+                    <tr>
+
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+
+                        <th class="tbl">Xem chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userOrders)
+                    {
+                        <tr class="tbl1">
+
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> @ConvertTimeFormat(@uDetails.TimeMeeting)  </td>
+                            <td class="tbl">@uDetails.Place</td>
+
+
+                            <td>
+                                <input type="button" class="btn btn-primary tybut" value="Gửi kết quả" @onclick="() => Judge(uDetails)" />
+
+
+                            </td>
+
+
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+
+    }
+    else if (userDetails.Count == 0 || looking.Count == 0 )
+    {
+        <table class="table">
+            <thead >
+                <tr>
+                    <th class="tbl">ID</th>
+                    <th class="tbl">Chức Danh</th>
+                    <th class="tbl">Vị trí</th>
+                    <th class="tbl">Họ tên</th>
+                    <th class="tbl">Số Điện thoại</th>
+                    <th class="tbl">Thời Gian phỏng vấn</th>
+                    <th class="tbl">Địa đỉểm phỏng vấn</th>
+
+                    <th class="tbl">Xem chi tiết</th>
+                </tr>
+            </thead>
+        </table>
+    }
+</div>
+
+@*//result pass popup*@
+<div id="popup" class="popup" style="@(createMailFlg ? "display:none": ""); position:fixed">
+    <div class="popup-content" style=" position: relative;">
+        <button class="close" @onclick=@fclose>&times;</button>
+        @* <label>Mail moi phong van</label>*@
+
+
+        <h2>@mail</h2>
+        <h4>Thông báo từ SSV:</h4>
+        <p>Phỏng vấn thành công cho vị trí @Users.Position </p>
+        <p>Xin chào @Users.userName,</p>
+
+
+        @if (createMailFlg == false)
+        {
+
+            <p>Chúc mừng <input placeholder="xưng anh,chị,em,..." @oninput="UpdateUserWho" /> đã vượt qua vòng phỏng vấn và công ty xin được gửi tới <span>@Users.who</span> @Users.userName các thông tin về offer công việc</p>
+        }
+
+
+        <p>nếu có thắc mắc gì về nội dung Mail xin vui lòng gọi đến 016868888 để được hỗ trợ .</p>
+        <p>Rất mong được nhận lại phản hồi sớm của @Users.who .</p>
+        <p>Trân trọng,</p>
+        <p>SSV</p>
+        @if (createMailFlg == false)
+        {
+            <InputFile OnChange="LoadFiles" class="sele" multiple />
+        }
+        
+        
+            @if (isLoading)
+            {
+                <p>Uploading...</p>
+            }
+            else
+            {
+            <ul style="@(createMailFlg?"display:none":"")">
+                    @foreach (var file in loadedFiles)
+                    {
+                        <li>
+                            <ul>
+                                <li>Name: @file.Name</li>
+
+                            </ul>
+                        </li>
+                    }
+                </ul>
+            }
+        @if(valiOffer)
+        {
+            <input type="text" value="Chưa có file offer!" style="color:red" />
+
+
+        }
+        <button class="pop_Btn" style="bottom:15px"@onclick="handleSendOffer">
+            Gửi Mail
+        </button>
+    </div>
+</div>
+@*//result failed popup*@
+<div id="popup" class="popup" style="@(createMailFailedFlg ? "display:none": ""); position:fixed">
+    <div class="popup-content" style=" position: relative;">
+        <button class="close" @onclick=@fMClose>&times;</button>
+        <h2>@mail</h2>
+        <h4>Thông báo từ SSV:</h4>
+        <p> Phỏng vấn thất bại cho vị trí @Users.Position</p>
+        <p>Xin chào @Users.userName,</p>
+
+
+        @if (createMailFailedFlg == false)
+        {
+
+            <p>Rất tiếc <input placeholder="xưng anh,chị,em,..." @oninput="UpdateUserWho" /> đã chưa vượt qua được vòng phỏng vấn và công ty xin được gửi tới <span>@Users.who</span> @Users.userName lời cảm ơn vì đã quan tâm đến vị trí công việc và mong <span>@Users.who</span> @Users.userName sẽ tìm được công việc phù hợp khác </p>
+        }
+
+
+        <p>nếu có thắc mắc gì về nội dung Mail xin vui lòng gọi đến 016868888 để được hỗ trợ .</p>
+
+        <p>Trân trọng,</p>
+        <p>SSV</p>
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="handleSendOffer">
+            Gửi Mail
+        </button>
+    </div>
+</div>
+
+
+
+<div id="popup" class="popup" style="@(isSending ? "display:none": ""); position:fixed;">
+   
+
+
+
+
+
+        <div class="lds-dual-ring"></div>
+
+
+    </div>
+
+@*//trans to popup*@
+<div id="popup" class="popup" style="@(transFlg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop-content">
+        <button class="close" @onclick=@transClose>&times;</button>
+        <label>Ứng viên Intern đã qua vòng 1,vui lòng chuyển qua "Gửi Mail phỏng vấn"</label>
+
+
+        <button class="pop_Btn" style="bottom:15px"@onclick="transTo">
+            Chuyển
+        </button>
+    </div>
+</div>
+@*//err filter popup*@
+<div id="popup" class="popup" style="@(errF_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop-content">
+        <button class="close" @onclick=@Fclose>&times;</button>
+        <label>Chưa chọn vị trí</label>
+
+
+        <button class="pop_Btn" style="bottom:15px"@onclick="Fclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@*//err search popup*@
+<div id="popup" class="popup" style="@(errS_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop-content">
+        <button class="close" @onclick=@Sclose>&times;</button>
+        <label>Chưa nhập giá trị cần tìm</label>
+
+
+        <button class="pop_Btn" style="bottom:15px"@onclick="Sclose">
+            Đóng
+        </button>
+    </div>
+
+</div>
+@*//err order popup*@
+<div id="popup" class="popup" style="@(errO_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop-content">
+        <button class="close" @onclick=@Oclose>&times;</button>
+        <label>Chưa chọn kiểu sắp xếp</label>
+
+
+        <button class="pop_Btn" style="bottom:15px"@onclick="Oclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@code {
+
+}
+
+
+

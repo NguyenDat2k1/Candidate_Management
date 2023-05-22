@@ -1,0 +1,108 @@
+﻿@page "/Import"
+@using Interview.Models
+@using Interview.Data
+@inject userDetailSerivce ImportService
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.AspNetCore.Components;
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@inject ILogger<Import> Logger
+@inject IWebHostEnvironment Environment
+@using System.Web;
+@inject NavigationManager NavigationManager;
+@using System.Text.RegularExpressions;
+
+<EditForm Model="@users" novalidate OnValidSubmit="@HandleValidSubmit">
+ 
+    <div class="container">
+        <div class="title">
+            NHẬP THỦ CÔNG
+        </div>
+        <div class="content">
+            <form action="javascript:;">
+                <div class="user-details">
+                    <div class="input-box">
+                        <span class="details">Vị Trí </span>
+                        <select name="fruits" @bind="@language" class="sele">@*select role*@
+                            <option value="">Chọn vị trí</option>
+                            @foreach (var laDetails in langDetails)
+                            {
+                                <option value="@laDetails.Name">@laDetails.Name</option>
+                            }
+
+                        </select>
+                        <div style="@(langFlg? "display:none":"");color:red">*Vui lòng chọn vị trí </div>
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Chức Danh</span>                    @*select position*@
+                        <select name="fruits" @bind="@role" class="sele">
+                            <option value="">Chọn chức danh </option> 
+                            @foreach (var rolDetails in roleDetails)
+                            {
+                                <option value="@rolDetails.Name">@rolDetails.Name</option>
+                            }
+                        </select>
+                        <div style="@(roleFlg? "display:none":"");color:red">*Vui lòng chọn chức danh </div>
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Tải lên CV</span>
+
+                        <InputFile OnChange="LoadFile" class="sele" />
+                        <div style="@(fileFlg? "display:none":"");color:red">*Vui lòng chọn file CV để import </div> @*choosse file to import*@
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Người Giới Thiệu</span>
+                        <select name="fruits" @bind="@source" class="sele">
+                            <option value="">Chọn người giới thiệu </option>
+                            @foreach (var boostDetails in sugDetails)
+                            {
+                                <option value="@boostDetails.Name">@boostDetails.Name</option>
+                            }
+                        </select>
+                        <div style="@(souFlg? "display:none":"");color:red">*Vui lòng chọn người giới thiệu </div>   @*select supporter*@
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Họ Tên</span>
+                        <input type="text" placeholder="" @bind-value="@userName"  class="sele">
+                        <div style="@(nameFlg? "display:none":"");color:red">*Vui lòng nhập tên </div>     @*input userName*@
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Số điện thoại </span>
+                        <input type="text" placeholder="" @bind-value="@Phone" class="sele">                @*input phone number*@
+                        <div style="@(phoneFlg? "display:none":"");color:red">*Vui lòng nhập SDT </div>
+                         <div style="@(phoneLength_Flg? "display:none":"");color:red">*SDT phải chứa 10 số </div>
+                        <div style="@(phoneChar_Flg? "display:none":"");color:red">*SDT không được chưa ký tự khác số </div>
+                        <div style="@(phone0Flg? "display:none":"");color:red">*SDT phải có số 0 ở đầu </div>
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Ngày sinh</span>
+                        <input type="date" placeholder="" @bind-value="@Birthday" class="sele">    @*input birthday*@
+                  
+                    </div>
+                    <div class="input-box">
+                        <span class="details">Email</span>
+                        <input type="text" placeholder="" @bind-value="@Email" class="sele">            @*input email*@
+                        <div style="@(emailFlg? "display:none":"");color:red">*Vui lòng nhập Email </div>
+                        <div style="@(emai1lFlg? "display:none":"");color:red">Địa chỉ Email không hợp lệ </div>   
+                    </div>
+                    <div class="input-box" style=" margin-bottom: 15px;width: 100%;">
+                        <span class="details">Địa chỉ</span>
+                        <input type="text" placeholder="" @bind-value="@Address" class="sele">           @*input address*@
+                        <div style="@(addressFlg? "display:none":"");color:red">*Vui lòng nhập Địa chỉ </div>
+                      
+                    </div>
+                </div>
+
+                <div class="button" style=" height: 45px;margin: 35px 0">
+                    <button type="submit" @onclick="@imported" style="height: 100%;width: 100%;border-radius: 5px;border: none;color: #fff;font-size: 18px;font-weight: 500;letter-spacing: 1px;cursor: pointer;transition: all 0.3s ease;background: linear-gradient(135deg, #71b7e6, #9b59b6);">Nhập</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</EditForm>
+@code {
+  
+
+}

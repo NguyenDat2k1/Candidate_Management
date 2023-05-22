@@ -1,0 +1,408 @@
+﻿@page "/Contact"
+@using Interview.Models
+@using Interview.Data
+@inject ContactController ContactService
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.AspNetCore.Components;
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@inject ILogger<Import> Logger
+@inject IWebHostEnvironment Environment
+@using System.Diagnostics
+@using System.Net.Http
+@inject IHttpClientFactory httpClient
+@using System.Net.Http.Json;
+@using System.Web;
+
+
+<table>
+  @*  <tr>
+        <td colspan="5" align="left">
+            <label style="height: 30px; width:300px; background-color:#336699 ; color:#FFFFFF ;border: solid 1px #659EC7;"> Tìm Ứng Viên</label>
+
+        </td>
+    </tr>*@
+    <tr style="height: 30px; background-color:#336699 ; color:#FFFFFF ;border: solid 1px #659EC7;">
+        <td colspan="5" align="left">
+            Tìm Ứng Viên
+        </td>
+    </tr>
+    <tr>
+
+
+
+        <td>
+            <input class="input-group-text" placeholder="Nhập từ khoá..." type="text" @bind-value="@search" />
+        </td>
+        <td>
+            @* <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Searching />*@
+        </td>
+
+
+
+        <td>
+            <select name="Filter" @bind="@type" style="height:37px" class="sele">
+                <option value="">Vị trí:</option>
+                @foreach (var tyDetails in typeDetails)
+                {
+                    <option value="@tyDetails.Name">@tyDetails.Name</option>
+                }
+            </select>
+            @* <input type="button" class="btn btn-primary" value="  Lọc  " @onclick=@Filtering />*@
+        </td>
+
+        <td>
+
+            <select name="Order" @bind="@Order" style="height:37px" class="sele">
+                <option value="">Sắp xếp</option>
+                <option value="0">Mới nhất</option>
+                <option value="1">Cũ nhất</option>
+
+            </select>
+            <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Looking />
+        </td>
+        <td>
+            <input type="button" class="btn btn-primary " value="Duyệt" @onclick="updateAll" style="background-color:lightseagreen" />
+        </td>
+
+    </tr>
+  
+</table>
+<div style="@(cautionFlg ? "" : "opacity: 0.1; transition:0.5s" );@(add2Flg ? "" : "opacity: 0.1; transition:0.5s" );@(failedFlg ? "" : "opacity: 0.1; transition:0.5s" )">
+    @if (userDetails == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+
+    //main screen ==========================
+    else if (mainFlg && lookFlg == false)
+    {
+        if (userDetails != null)
+        {
+            <table class="table">
+                <thead style="border">
+                    <tr>
+                        <th class="tbl"><input type="checkbox" @onchange="@(()=>checkAll(userDetails))" id="check-all"> Check All</th>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+                        <th class="tbl">Trạng thái</th>
+                        <th class="tbl">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userDetails)
+                    {
+                        <tr class="tbl1">
+                            <td class="tbl"><input type="checkbox" checked="@uDetails.isChecked" @onchange="(eventchangeargs) => checking(eventchangeargs, uDetails)"></td>
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> <input type="datetime-local" @bind-value="@uDetails.TimeMeeting"></td>
+                            <td class="tbl"> <input class="input-group-text" type="text" disabled="@(!(uDetails.statusContact=="15"))" placeholder="Nhập dia diem pv..." @bind-value="@uDetails.Place" /></td>
+                            <td class="tbl">
+                                <select name="Filter" @bind="@uDetails.statusContact" class="sele">
+                                    @if (uDetails.statusContact == null || uDetails.statusContact == "14")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    @if (uDetails.statusContact == "15" || uDetails.statusContact == "16")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    <option value="15"> Liên hệ được</option>
+                                    <option value="16">Khong Liên hệ được</option>
+                                </select>
+                            </td>
+
+                            <td>
+
+
+                                <input type="button" class="btn btn-primary act1_Btn" @ref="buttonRef" value="Cập nhật" @onclick="() => updateContact(uDetails)" />
+
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+
+    //Filter screen ==========================
+    else if (looking.Count != 0)
+    {
+        if (lookFlg)
+        {
+            <table class="table">
+                <thead style="border">
+                    <tr>
+                        <th class="tbl"><input type="checkbox" @onchange="@(()=>checkAll(looking))" id="check-all"> Check All</th>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+                        <th class="tbl">Trạng thái</th>
+                        <th class="tbl">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in looking)
+                    {
+                        <tr class="tbl1">
+                            <th class="tbl"><input type="checkbox" checked="@uDetails.isChecked" @onchange="(eventchangeargs) => checking(eventchangeargs, uDetails)"></th>
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> <input type="datetime-local" @bind-value="@uDetails.TimeMeeting"></td>
+                            <td class="tbl"> <input class="input-group-text" type="text" disabled="@(!(uDetails.statusContact=="15"))" placeholder="Nhập dia diem pv..." @bind-value="@uDetails.Place" /></td>
+                            <td class="tbl">
+                                <select name="Filter" @bind="@uDetails.statusContact" class="sele">
+                                    @if (uDetails.statusContact == null || uDetails.statusContact == "14")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    @if (uDetails.statusContact == "15" || uDetails.statusContact == "16")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    <option value="15"> Liên hệ được</option>
+                                    <option value="16">Khong Liên hệ được</option>
+                                </select>
+                            </td>
+
+                            <td>
+
+
+                                <input type="button" class="btn btn-primary act1_Btn" @ref="buttonRef" value="Cập nhật" @onclick="() => updateContact(uDetails)" />
+
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+      
+
+    }
+    //Search screen ==========================
+    else if (userSearchs != null && userSearchs.Count != 0)
+    {
+        if (searchFlg)
+        {
+            <table class="table">
+                <thead style="border">
+                    <tr>
+                        <th class="tbl"><input type="checkbox" @onchange="@(()=>checkAll(userSearchs))" id="check-all"> Check All</th>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+                        <th class="tbl">Trạng thái</th>
+                        <th class="tbl">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userSearchs)
+                    {
+                        <tr class="tbl1">
+                            <th class="tbl"><input type="checkbox" checked="@uDetails.isChecked" @onchange="(eventchangeargs) => checking(eventchangeargs, uDetails)"></th>
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> <input type="datetime-local" @bind-value="@uDetails.TimeMeeting"></td>
+                            <td class="tbl"> <input class="input-group-text" type="text" disabled="@(!(uDetails.statusContact=="15"))" placeholder="Nhập dia diem pv..." @bind-value="@uDetails.Place" /></td>
+                            <td class="tbl">
+                                <select name="Filter" @bind="@uDetails.statusContact" class="sele">
+                                    @if (uDetails.statusContact == null || uDetails.statusContact == "14")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    @if (uDetails.statusContact == "15" || uDetails.statusContact == "16")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    <option value="15"> Liên hệ được</option>
+                                    <option value="16">Khong Liên hệ được</option>
+                                </select>
+                            </td>
+
+                            <td>
+
+
+                                <input type="button" class="btn btn-primary " value="Cập nhật" @onclick="() => updateContact(uDetails)" />
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    
+
+    }
+    //Order screen ==========================
+    else if (userOrders != null && userOrders.Count != 0)
+    {
+        if (orderFlg)
+        {
+            <table class="table">
+                <thead style="border">
+                    <tr>
+                        <th class="tbl"><input type="checkbox" @onchange="@(()=>checkAll(userOrders))" id="check-all"> Check All</th>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Số Điện thoại</th>
+                        <th class="tbl">Thời Gian phỏng vấn</th>
+                        <th class="tbl">Địa đỉểm phỏng vấn</th>
+                        <th class="tbl">Trạng thái</th>
+                        <th class="tbl">Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userOrders)
+                    {
+                        <tr class="tbl1">
+                            <th class="tbl"><input type="checkbox" checked="@uDetails.isChecked" @onchange="(eventchangeargs) => checking(eventchangeargs, uDetails)"></th>
+                            <td class="tbl">
+                                @uDetails.userID
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">@uDetails.Phone</td>
+                            <td class="tbl"> <input type="datetime-local" @bind-value="@uDetails.TimeMeeting"></td>
+                            <td class="tbl"> <input class="input-group-text" type="text" disabled="@(!(uDetails.statusContact=="15"))" placeholder="Nhập dia diem pv..." @bind-value="@uDetails.Place" /></td>
+                            <td class="tbl">
+                                <select name="Filter" @bind="@uDetails.statusContact" class="sele">
+                                    @if (uDetails.statusContact == null || uDetails.statusContact == "14")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    @if (uDetails.statusContact == "15" || uDetails.statusContact == "16")
+                                    {
+                                        <option value="14">Chưa liên hệ </option>
+                                    }
+                                    <option value="15"> Liên hệ được</option>
+                                    <option value="16">Khong Liên hệ được</option>
+                                </select>
+                            </td>
+
+                            <td>
+
+                                <input type="button" class="btn btn-primary " value="Cập nhật"  @onclick="() => updateContact(uDetails)" />
+
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+      
+
+    }
+    else if (userDetails.Count == 0 || looking.Count == 0 || userSearchs.Count == 0 || userOrders.Count == 0)
+    {
+        <table class="table">
+            <thead style="border">
+                <tr>
+                    <th class="tbl"><input type="checkbox"  id="check-all"> Check All</th>
+                    <th class="tbl">ID</th>
+                    <th class="tbl">Chức Danh</th>
+                    <th class="tbl">Vị trí</th>
+                    <th class="tbl">Họ tên</th>
+                    <th class="tbl">Số Điện thoại</th>
+                    <th class="tbl">Thời Gian phỏng vấn</th>
+                    <th class="tbl">Địa đỉểm phỏng vấn</th>
+                    <th class="tbl">Trạng thái</th>
+                    <th class="tbl">Hành Động</th>
+                </tr>
+            </thead>
+        </table>
+    }
+</div>
+
+
+@*popup caution *@
+<div id="popup" class="popup" style="@(cautionFlg ? "display:none": ""); position:fixed">
+    <div class="popup-content">
+        <button class="close" @onclick=@close>&times;</button>
+        <label>@errMsg </label>
+    </div>
+</div>
+
+@*popup err filter *@
+<div id="popup" class="popup" style="@(errF_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content">
+        <button class="close" @onclick=@Fclose>&times;</button>
+        <label>Chưa chọn vị trí</label>
+
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="Fclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@*popup err search *@
+<div id="popup" class="popup" style="@(errS_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content" >
+        <button class="close" @onclick=@Sclose>&times;</button>
+        <label>Chưa nhập giá trị cần tìm</label>
+
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="Sclose">
+            Đóng
+        </button>
+    </div>
+
+</div>
+@*popup err order *@
+<div id="popup" class="popup" style="@(errO_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content">
+        <button class="close" @onclick=@Oclose>&times;</button>
+        <label>Chưa chọn kiểu sắp xếp</label>
+
+
+        <button class="pop_Btn" style="bottom:15px"  @onclick="Oclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@code {
+
+
+   
+}
+

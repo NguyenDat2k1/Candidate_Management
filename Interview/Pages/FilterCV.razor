@@ -1,0 +1,407 @@
+﻿@page "/Filter"
+@using Interview.Models
+@using Interview.Data
+@inject userDetailSerivce FilterService
+@using System.ComponentModel.DataAnnotations;
+@using Microsoft.AspNetCore.Components;
+@using System
+@using System.IO
+@using Microsoft.AspNetCore.Hosting
+@using Microsoft.Extensions.Logging
+@inject ILogger<Import> Logger
+@inject IWebHostEnvironment Environment
+@using System.Diagnostics
+@using System.Net.Http
+@inject IHttpClientFactory httpClient
+@using System.Net.Http.Json;
+@using System.Web;
+@using System.Linq;
+
+<table>
+    <tr style="height: 30px; background-color:#336699 ; color:#FFFFFF ;border: solid 1px #659EC7;">
+        <td colspan="5" align="left">
+            Tìm Ứng Viên
+        </td>
+    </tr>
+    <tr>
+
+
+
+        <td>
+            <input class="input-group-text" placeholder="Nhập từ khoá..." type="text" @bind-value="@search" />
+        </td>
+        <td>
+           @* <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Searching />*@
+        </td>
+
+
+
+        <td>
+            <select name="Filter" @bind="@type" style="height:37px" class="sele">
+                <option value="">Vị trí:</option>
+                @foreach (var tyDetails in typeDetails)
+                {
+                    <option value="@tyDetails.Name">@tyDetails.Name</option>
+                }
+            </select>
+           @* <input type="button" class="btn btn-primary" value="  Lọc  " @onclick=@Filtering />*@
+        </td>
+
+        <td>
+
+            <select name="Order" @bind="@Order" style="height:37px" class="sele">
+                <option value="">Sắp xếp</option>
+                <option value="0">Mới nhất</option>
+                <option value="1">Cũ nhất</option>
+
+            </select>
+            <input type="button" class="btn btn-primary" value="Tìm kiếm" @onclick=@Looking />
+        </td>
+
+    </tr>
+    @*  <tr>
+
+
+    </tr>*@
+</table>
+<div style="@(add1Flg ? "" : "opacity: 0.1; transition:0.5s" );@(add2Flg ? "" : "opacity: 0.1; transition:0.5s" );@(failedFlg ? "" : "opacity: 0.1; transition:0.5s" )">
+    @if (userDetails == null)
+    {
+        <p><em>Loading...</em></p>
+    }
+
+    else if (mainFlg && lookFlg== false)
+    {
+        if (userDetails != null)
+        {
+
+            <table class="table">
+                <thead >
+                    <tr>
+                        <th class="tbl tl">ID</th>
+                        <th class="tbl tl">Chức Danh</th>
+                        <th class="tbl tl">Vị trí</th>
+                        <th class="tbl tl">Họ tên</th>
+                        <th class="tbl tl">Ngày sinh</th>
+                        <th class="tbl tl">Địa chỉ</th>
+                        <th class="tbl tl">Nguồn</th>
+                        <th class="tbl tl">Đã từng Apply?</th>
+                        <th class="tbl tl">Duyệt/Loại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userDetails)
+                    {
+                        <tr class="tbl1">
+                            <td class="tbl">
+                                <input type="button" class="btn-popup" @onclick="() => CVDetail(uDetails)" value="@uDetails.userID">
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">
+                                @if (uDetails.Birthday != null)
+                                {
+                                    dateString = @uDetails.Birthday.ToString("dd/MM/yyyy");
+                                }
+                                @dateString
+                            </td>
+                            <td class="tbl">@uDetails.Address</td>
+                            <td class="tbl">@uDetails.Source</td>
+                            <td class="tbl">
+                                <input type="button" id="open-popup" @onclick="() => appliedDetail(uDetails)" value="Đã từng Apply">
+                            </td>
+
+                            <td>
+                                <input type="button" class="btn btn-primary act_Btn"  value="Loại" @onclick="()=> failedCV(uDetails)" />
+                                <input type="button" class="btn btn-primary act1_Btn"  @ref="buttonRef" value="Duyệt" @onclick="() => passCV(uDetails)" />
+
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    }
+    else if (userFilters != null && userFilters.Count != 0)
+        {
+            if (filterFlg)
+            {
+                <table class="table">
+                    <thead >
+                        <tr>
+                            <th class="tbl">ID</th>
+                            <th class="tbl">Chức Danh</th>
+                            <th class="tbl">Vị trí</th>
+                            <th class="tbl">Họ tên</th>
+                            <th class="tbl">Ngày sinh</th>
+                            <th class="tbl">Địa chỉ</th>
+                            <th class="tbl">Nguồn</th>
+                            <th class="tbl">Đã từng Apply?</th>
+                            <th class="tbl">Duyệt/Loại</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var uDetails in userFilters)
+                        {
+                            <tr class="tbl1">
+                                <td class="tbl">
+                                    <input type="button" class="btn-popup" @onclick="() => CVDetail(uDetails)" value="@uDetails.userID">
+                                </td>
+                                <td class="tbl">@uDetails.Role</td>
+                                <td class="tbl">@uDetails.Position</td>
+                                <td class="tbl">@uDetails.userName</td>
+                                <td class="tbl">
+                                @if (uDetails.Birthday != null)
+                                {
+                                    dateString = @uDetails.Birthday.ToString("dd/MM/yyyy");
+                                }
+                                @dateString
+                                </td>
+                                <td class="tbl">@uDetails.Address</td>
+                                <td class="tbl">@uDetails.Source</td>
+                                <td class="tbl">
+                                    <input type="button" id="open-popup" @onclick="() => appliedDetail(uDetails)" value="Đã từng Apply">
+                                </td>
+
+                                <td>
+                                    <input type="button" class="btn btn-primary act_Btn" value="Loại" @onclick="()=> failedCV(uDetails)" />
+                                    <input type="button" class="btn btn-primary act1_Btn" value="Duyệt" @onclick="() => passCV(uDetails)" />
+
+                                </td>
+
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            @* <td>
+    <input type="button" class="btn btn-primary" value="Add" @onclick=@addDetails style="background-color:#6495ED; border-radius:15px;box-shadow:0 10px 0 #0005, 0 5px 0 blue,0 4px 0 7px #fff;transition:0.3 s;@(active?" box-shadow:0 0px 0  #0005,0 0px 0 darkgreen,0 0px 0 7px #fff;transform:translateY(5px)":" " )" />
+
+    </td>*@
+        }
+    
+    else if (userSearchs != null && userSearchs.Count != 0)
+    {
+        if (searchFlg)
+        {
+            <table class="table">
+                <thead >
+                    <tr>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Ngày sinh</th>
+                        <th class="tbl">Địa chỉ</th>
+                        <th class="tbl">Nguồn</th>
+                        <th class="tbl">Đã từng Apply?</th>
+                        <th class="tbl">Duyệt/Loại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in userSearchs)
+                    {
+                        <tr class="tbl1">
+                            <td class="tbl">
+                                <input type="button" class="btn-popup" @onclick="() => CVDetail(uDetails)" value="@uDetails.userID">
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">
+                                @if (uDetails.Birthday != null)
+                                {
+                                    dateString = @uDetails.Birthday.ToString("dd/MM/yyyy");
+                                }
+                                @dateString
+                            </td>
+                            <td class="tbl">@uDetails.Address</td>
+                            <td class="tbl">@uDetails.Source</td>
+                            <td class="tbl">
+                                <input type="button" id="open-popup" @onclick="() => appliedDetail(uDetails)" value="Đã từng Apply">
+                            </td>
+
+                            <td>
+                                <input type="button" class="btn btn-primary act_Btn" value="Loại" @onclick="()=> failedCV(uDetails)" />
+                                <input type="button" class="btn btn-primary act1_Btn" value="Duyệt" @onclick="() => passCV(uDetails)" />
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        @* <td>
+    <input type="button" class="btn btn-primary" value="Add" @onclick=@addDetails style="background-color:#6495ED; border-radius:15px;box-shadow:0 10px 0 #0005, 0 5px 0 blue,0 4px 0 7px #fff;transition:0.3 s;@(active?" box-shadow:0 0px 0  #0005,0 0px 0 darkgreen,0 0px 0 7px #fff;transform:translateY(5px)":" " )" />
+
+    </td>*@
+
+    }
+    else if (looking.Count != 0)
+    {
+        if (lookFlg)
+        {
+            <table class="table">
+                <thead >
+                    <tr>
+                        <th class="tbl">ID</th>
+                        <th class="tbl">Chức Danh</th>
+                        <th class="tbl">Vị trí</th>
+                        <th class="tbl">Họ tên</th>
+                        <th class="tbl">Ngày sinh</th>
+                        <th class="tbl">Địa chỉ</th>
+                        <th class="tbl">Nguồn</th>
+                        <th class="tbl">Đã từng Apply?</th>
+                        <th class="tbl">Duyệt/Loại</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var uDetails in looking)
+                    {
+                        <tr class="tbl1">
+                            <td class="tbl">
+                                <input type="button" class="btn-popup" @onclick="() => CVDetail(uDetails)" value="@uDetails.userID">
+                            </td>
+                            <td class="tbl">@uDetails.Role</td>
+                            <td class="tbl">@uDetails.Position</td>
+                            <td class="tbl">@uDetails.userName</td>
+                            <td class="tbl">
+                                @if (uDetails.Birthday != null)
+                                 {
+                                dateString = @uDetails.Birthday.ToString("dd/MM/yyyy");
+                                }
+                                @dateString
+                            </td>
+                            <td class="tbl">@uDetails.Address</td>
+                            <td class="tbl">@uDetails.Source</td>
+                            <td class="tbl">
+                                <input type="button" id="open-popup" @onclick="() => appliedDetail(uDetails)" value="Đã từng Apply">
+                            </td>
+
+                            <td>
+                                <input type="button" class="btn btn-primary act_Btn" value="Loại" @onclick="()=> failedCV(uDetails)" />
+                                <input type="button" class="btn btn-primary act1_Btn" @ref="buttonRef" value="Duyệt" @onclick="() => passCV(uDetails)" />
+
+                            </td>
+
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        @* <td>
+    <input type="button" class="btn btn-primary" value="Add" @onclick=@addDetails style="background-color:#6495ED; border-radius:15px;box-shadow:0 10px 0 #0005, 0 5px 0 blue,0 4px 0 7px #fff;transition:0.3 s;@(active?" box-shadow:0 0px 0  #0005,0 0px 0 darkgreen,0 0px 0 7px #fff;transform:translateY(5px)":" " )" />
+
+    </td>*@
+
+    }
+    else if (userDetails.Count == 0 || looking.Count == 0)
+    {
+        <table class="table">
+            <thead >
+                <tr>
+                    <th class="tbl">ID</th>
+                    <th class="tbl">Chức Danh</th>
+                    <th class="tbl">Vị trí</th>
+                    <th class="tbl">Họ tên</th>
+                    <th class="tbl">Ngày sinh</th>
+                    <th class="tbl">Địa chỉ</th>
+                    <th class="tbl">Nguồn</th>
+                    <th class="tbl">Đã từng Apply?</th>
+                    <th class="tbl">Duyệt/Loại</th>
+                </tr>
+            </thead>
+        </table>
+    }
+</div>
+
+
+@*button apply*@
+<div id="popup" class="popup" style="@(add1Flg ? "display:none": ""); position:fixeed">
+    <div class="popup-content">
+        <button class="close" @onclick=@close>&times;</button>
+        <label>Lý do loại lần trước của ứng viên: @Users.userName</label>
+
+        <label style="width:80%;height:80%">@Users.Applied</label>
+    </div>
+</div>
+
+
+@*button ID*@
+<div id="popup" class="popup" style="@(add2Flg ? "display:none": ""); position:fixed">
+    <div class="popup-content">
+        <button class="close" @onclick=@close2>&times;</button>
+        <embed style="width:100%;height:95%" class="scale-input" src=@("/CV/"+cv)>
+    </div>
+</div>
+
+
+
+@*popup handle failed*@
+<div id="popup" class="popup" style="@(failedFlg ? "display:none": ""); position:fixed">
+    <div class="popup-content" style="background-color:lightslategrey; position: relative;">
+        <button class="close" @onclick=@fclose>&times;</button>
+        <label>Lý do loại</label>
+        <input style="width:90%;height:90%" @bind-value="@Users.failedValue">
+        @if (haveNotFillYet == false)
+        {
+
+            <input type="text" style="color:indianred;margin-left:10px" @bind="@alertInput" disabled />
+        }
+        <button class="pop_Btn" style="bottom:15px;background-color:lightseagreen" @onclick=@handleFailedCV>
+            Lưu
+        </button>
+    </div>
+</div>
+@*popup err filter*@
+<div id="popup" class="popup" style="@(errF_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content">
+        <button class="close" @onclick=@Fclose>&times;</button>
+        <label>Chưa chọn vị trí</label>
+
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="Fclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@*popup err searching*@
+<div id="popup" class="popup" style="@(errS_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content">
+        <button class="close" @onclick=@Sclose>&times;</button>
+        <label>Chưa nhập giá trị cần tìm</label>
+
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="Sclose">
+            Đóng
+        </button>
+    </div>
+
+</div>
+@*popup err order*@
+<div id="popup" class="popup" style="@(errO_Flg ? "display:none": ""); position:fixed;">
+    <div class="popup-content pop_content">
+        <button class="close" @onclick=@Oclose>&times;</button>
+        <label>Chưa chọn kiểu sắp xếp</label>
+
+
+        <button class="pop_Btn" style="bottom:15px" @onclick="Oclose">
+            Đóng
+        </button>
+    </div>
+</div>
+@code {
+
+
+
+}
+
+
+
+
